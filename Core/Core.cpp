@@ -381,15 +381,15 @@ int Core_GetSteppingCounter() {
 	return steppingCounter;
 }
 
-const char *ExceptionTypeToString(ExceptionType type) {
+const char *ExceptionTypeAsString(ExceptionType type) {
 	switch (type) {
-	case ExceptionType::MEMORY: return "Memory";
+	case ExceptionType::MEMORY: return "Invalid Memory Access";
 	case ExceptionType::BREAK: return "Break";
 	default: return "N/A";
 	}
 }
 
-const char *MemoryExceptionTypeToString(MemoryExceptionType type) {
+const char *MemoryExceptionTypeAsString(MemoryExceptionType type) {
 	switch (type) {
 	case MemoryExceptionType::READ_WORD: return "Read Word";
 	case MemoryExceptionType::WRITE_WORD: return "Write Word";
@@ -401,7 +401,7 @@ const char *MemoryExceptionTypeToString(MemoryExceptionType type) {
 }
 
 void Core_MemoryException(u32 address, u32 pc, MemoryExceptionType type) {
-	const char *desc = MemoryExceptionTypeToString(type);
+	const char *desc = MemoryExceptionTypeAsString(type);
 	// In jit, we only flush PC when bIgnoreBadMemAccess is off.
 	if (g_Config.iCpuCore == (int)CPUCore::JIT && g_Config.bIgnoreBadMemAccess) {
 		WARN_LOG(MEMMAP, "%s: Invalid address %08x", desc, address);
@@ -414,6 +414,8 @@ void Core_MemoryException(u32 address, u32 pc, MemoryExceptionType type) {
 	e.type = ExceptionType::MEMORY;
 	e.info = "";
 	e.memory_type = type;
+	e.address = address;
+	e.pc = pc;
 
 	if (!g_Config.bIgnoreBadMemAccess) {
 		Core_EnableStepping(true);
@@ -435,6 +437,6 @@ void Core_Break() {
 	}
 }
 
-ExceptionInfo Core_GetExceptionInfo() {
+const ExceptionInfo &Core_GetExceptionInfo() {
 	return g_exceptionInfo;
 }
